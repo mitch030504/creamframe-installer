@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import urllib.request
+import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -590,6 +591,38 @@ def cmd_android_reset(args):
 
 # --------------------------------------------------------------- native ---
 
+def download_native_lib(arch):
+    name = "lib32Creamlinux.so" if arch in ("i386", "arm") else "lib64Creamlinux.so"
+    asset_name = "creamframe-aarch64.zip" if arch == "aarch64" else "creamframe.zip"
+    if arch not in ("aarch64", "x86_64", "i386"):
+        return None
+    cache_dir = CACHE / "native" / arch
+    cached = cache_dir / name
+    if cached.is_file():
+        return cached
+    try:
+        api = "https://api.github.com/repos/mitch030504/creamframe/releases/latest"
+        req = urllib.request.Request(api, headers={"User-Agent": "creamframe-frame/1.0"})
+        with urllib.request.urlopen(req, timeout=30) as response:
+            release = json.load(response)
+        asset = next((a for a in release.get("assets", []) if a.get("name") == asset_name), None)
+        if not asset:
+            return None
+        with urllib.request.urlopen(asset["browser_download_url"], timeout=120) as response:
+            data = response.read()
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        archive = cache_dir / asset_name
+        archive.write_bytes(data)
+        with zipfile.ZipFile(archive) as zf:
+            for member in zf.namelist():
+                if Path(member).name in (name, "lib32Creamlinux.so", "lib64Creamlinux.so"):
+                    (cache_dir / Path(member).name).write_bytes(zf.read(member))
+        return cached if cached.is_file() else None
+    except Exception as exc:
+        print(f"warning: could not download {asset_name}: {exc}", file=sys.stderr)
+        return None
+
+
 def find_native_lib(arch):
     name = "lib32Creamlinux.so" if arch in ("i386", "arm") else "lib64Creamlinux.so"
     candidates = [
@@ -607,7 +640,7 @@ def find_native_lib(arch):
     for candidate in candidates:
         if candidate.is_file():
             return candidate
-    return None
+    return download_native_lib(arch)
 
 
 def remote_elf_machine(remote, path):
