@@ -15,7 +15,10 @@
       "icons/128x128@2x.png",
       "icons/icon.png"
     ],
-    "createUpdaterArtifacts": true
+    "createUpdaterArtifacts": true,
+    "resources": [
+      "resources"
+    ]
   },
   "productName": "CreamFrame",
   "mainBinaryName": "creamframe",
@@ -25,7 +28,7 @@
     "withGlobalTauri": false,
     "windows": [
       {
-        "title": "Creamlinux",
+        "title": "CreamFrame",
         "width": 1000,
         "height": 700,
         "minWidth": 800,

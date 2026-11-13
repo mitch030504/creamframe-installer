@@ -16,6 +16,7 @@ mod epic_scanner;
 mod pe_inspector;
 mod screamapi_config;
 mod system_info;
+mod frame_remote;
 
 use crate::config::Config;
 use crate::unlockers::{CreamLinux, SmokeAPI, Unlocker};
@@ -844,7 +845,7 @@ fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
     use std::fs;
 
     let xdg_dirs = xdg::BaseDirectories::with_prefix("creamframe")?;
-    let log_path = xdg_dirs.place_cache_file("creamlinux.log")?;
+    let log_path = xdg_dirs.place_cache_file("creamframe.log")?;
 
     if log_path.exists() {
         if let Err(e) = fs::write(&log_path, "") {
@@ -897,6 +898,12 @@ fn main() {
             write_smokeapi_config,
             delete_smokeapi_config,
             resolve_platform_conflict,
+            frame_remote::frame_prereqs,
+            frame_remote::frame_check,
+            frame_remote::frame_scan,
+            frame_remote::frame_action,
+            frame_remote::frame_android_patch_local,
+            frame_remote::frame_write_ini,
             load_config,
             update_config,
             add_custom_steam_path,

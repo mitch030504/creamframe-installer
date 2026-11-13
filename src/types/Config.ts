@@ -9,4 +9,5 @@ export interface Config {
   reporting_has_seen_prompt: boolean
   /** Extra Steam library folders to scan, beyond the auto-detected ones */
   custom_steam_paths: string[]
+  frame_remote: string
 }

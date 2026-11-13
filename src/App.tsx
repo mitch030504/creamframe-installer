@@ -24,7 +24,7 @@ import {
 } from '@/components/dialogs'
 
 // Page components (Overview and Settings)
-import { OverviewPage, SettingsPage } from '@/components/pages'
+import { FramePage, OverviewPage, SettingsPage } from '@/components/pages'
 
 // Game components
 import { GameList, EpicGameList } from '@/components/games'
@@ -158,6 +158,8 @@ function App() {
 
           {filter === 'overview' ? (
             <OverviewPage />
+          ) : filter === 'frame' ? (
+            <FramePage />
           ) : filter === 'settings' ? (
             <SettingsPage />
           ) : filter === 'epic' ? (

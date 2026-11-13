@@ -27,6 +27,7 @@ const Sidebar = ({ setFilter, currentFilter }: SidebarProps) => {
   const generalFilters: FilterItem[] = [
     { id: 'overview', label: 'Overview', icon: diamond, variant: 'solid' },
     { id: 'settings', label: 'Settings', icon: settings, variant: 'solid' },
+    { id: 'frame', label: 'Steam Frame', icon: diamond, variant: 'solid' },
   ]
 
   const steamFilters: FilterItem[] = [

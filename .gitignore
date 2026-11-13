@@ -24,3 +24,6 @@ docs
 *.njsproj
 *.sln
 *.sw?
+
+src-tauri/resources/jdk/*
+!src-tauri/resources/jdk/README.txt

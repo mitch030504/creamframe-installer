@@ -14,6 +14,13 @@ pub struct Config {
     // Extra Steam library folders to scan, beyond the auto-detected ones
     #[serde(default)]
     pub custom_steam_paths: Vec<String>,
+    // SSH destination for the Steam Frame remote tab
+    #[serde(default = "default_frame_remote")]
+    pub frame_remote: String,
+}
+
+fn default_frame_remote() -> String {
+    "steamos@frame".to_string()
 }
 
 impl Default for Config {
@@ -23,6 +30,7 @@ impl Default for Config {
             reporting_opted_in: false,
             reporting_has_seen_prompt: false,
             custom_steam_paths: Vec::new(),
+            frame_remote: default_frame_remote(),
         }
     }
 }

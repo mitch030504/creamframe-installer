@@ -1,0 +1,323 @@
+#!/usr/bin/env python3
+"""
+update-dlc.py - fetch the DLC list for a Steam app and merge it into cream_api.ini.
+
+The Steam Store API does not support batch appdetails lookups anymore, so DLC
+names are fetched one request at a time with a small delay (rate-limit friendly).
+
+Usage:
+  python3 update-dlc.py 394360                      # merge DLCs of Hearts of Iron IV
+  python3 update-dlc.py 394360 --dry-run            # show what would change
+  python3 update-dlc.py 394360 --output /path/to/cream_api.ini
+  python3 update-dlc.py 394360 281990 --verbose     # several games at once
+
+The script preserves comments, section order and foreign sections; only the
+[dlc] section is touched. New entries are appended, existing ids keep their
+position but may get their name refreshed. The file's line endings (LF or
+CRLF - package/cream_api.ini is CRLF) are preserved as well.
+"""
+
+import argparse
+import json
+import sys
+import time
+import urllib.request
+
+API = "https://store.steampowered.com/api/appdetails"
+CC = "us"
+LANG = "english"
+RETRIES = 3
+SLEEP_BETWEEN_REQUESTS = 0.8  # seconds, keep Steam API happy
+DRY_RUN_PREVIEW_LIMIT = 50   # max diff lines printed by --dry-run
+
+USER_AGENT = "creamframe-update-dlc/1.0"
+
+
+# ---------------------------------------------------------------- http ----
+
+def http_get_json(url, retries=RETRIES):
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    for attempt in range(retries):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                raw = resp.read()
+                if resp.headers.get("Content-Encoding") == "gzip":
+                    import gzip
+                    raw = gzip.decompress(raw)
+                return json.loads(raw)
+        except Exception as exc:  # noqa: BLE001 - network errors, 4xx/5xx
+            if attempt == retries - 1:
+                raise
+            time.sleep(2 * (attempt + 1))
+    return None
+
+
+def fetch_app(appid):
+    """Return (name, [dlc_appid...]) or (None, None) if the app is unknown."""
+    data = http_get_json(
+        f"{API}?appids={appid}&filters=basic&cc={CC}&l={LANG}")
+    if not isinstance(data, dict):
+        return None, None
+    entry = data.get(str(appid))
+    if not entry or not entry.get("success"):
+        return None, None
+    info = entry.get("data") or {}
+    return info.get("name"), list(info.get("dlc") or [])
+
+
+def fetch_dlc_names(dlc_ids, verbose=False):
+    """Fetch names for the given DLC appids, one request at a time."""
+    names = {}
+    for i, dlc_id in enumerate(dlc_ids):
+        if verbose:
+            print(f"  [{i + 1}/{len(dlc_ids)}] fetching name for {dlc_id}...")
+        try:
+            name, _ = fetch_app(dlc_id)
+        except Exception as exc:  # noqa: BLE001
+            print(f"  warning: failed to fetch {dlc_id}: {exc}", file=sys.stderr)
+            name = None
+        if name:
+            names[dlc_id] = name
+        else:
+            print(f"  warning: no name returned for DLC {dlc_id}", file=sys.stderr)
+        time.sleep(SLEEP_BETWEEN_REQUESTS)
+    return names
+
+
+# ------------------------------------------------------------ ini model ----
+
+class IniFile:
+    """Minimal ini reader/writer that preserves comments, order and unknown
+    sections. A section is a list of raw lines plus a dict view of key=value
+    entries for quick updates."""
+
+    def __init__(self):
+        self.sections = []  # list of dicts: {name, lines, index_of_key}
+        self.preamble = []  # lines before the first section
+        self.newline = "\n"  # line ending of the source file
+
+    @staticmethod
+    def _detect_newline(text):
+        crlf = text.count("\r\n")
+        lf = text.count("\n") - crlf
+        return "\r\n" if crlf > lf else "\n"
+
+    @staticmethod
+    def _split_key(line):
+        if "=" in line:
+            key, _, value = line.partition("=")
+            return key.strip(), value.strip()
+        return None, None
+
+    @classmethod
+    def parse(cls, text):
+        ini = cls()
+        ini.newline = cls._detect_newline(text)
+        current = None
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("[") and stripped.endswith("]"):
+                current = {"name": stripped[1:-1].strip(),
+                           "lines": [], "index": {}}
+                ini.sections.append(current)
+            elif current is None:
+                ini.preamble.append(line)
+            else:
+                current["lines"].append(line)
+                key, _ = cls._split_key(line)
+                if key is not None:
+                    current["index"][key] = len(current["lines"]) - 1
+        return ini
+
+    def get_section(self, name):
+        for sec in self.sections:
+            if sec["name"] == name:
+                return sec
+        sec = {"name": name, "lines": [], "index": {}}
+        self.sections.append(sec)
+        return sec
+
+    def get(self, section, key):
+        sec = self.get_section(section)
+        idx = sec["index"].get(key)
+        if idx is None:
+            return None
+        _, value = self._split_key(sec["lines"][idx])
+        return value
+
+    def set(self, section, key, value):
+        sec = self.get_section(section)
+        idx = sec["index"].get(key)
+        line = f"{key} = {value}"
+        if idx is None:
+            if sec["lines"] and sec["lines"][-1].strip() == "":
+                sec["lines"][-1] = line
+            else:
+                sec["lines"].append(line)
+            sec["index"][key] = len(sec["lines"]) - 1
+        else:
+            sec["lines"][idx] = line
+
+    def render(self):
+        out = list(self.preamble)
+        for sec in self.sections:
+            if out and out[-1] != "":
+                out.append("")
+            out.append(f"[{sec['name']}]")
+            out.extend(sec["lines"])
+        if not out:
+            return ""
+        return self.newline.join(out) + self.newline
+
+
+def load_ini(path):
+    """Read an ini file, keeping its line endings (newline='' disables the
+    universal-newline translation that would hide CRLF from the parser)."""
+    try:
+        with open(path, "r", encoding="utf-8", newline="") as fh:
+            return IniFile.parse(fh.read())
+    except FileNotFoundError:
+        return IniFile.parse("")
+
+
+def save_ini(path, ini):
+    """Write the ini back without translating line endings."""
+    with open(path, "w", encoding="utf-8", newline="") as fh:
+        fh.write(ini.render())
+
+
+# ------------------------------------------------------------- merging -----
+
+def merge_dlcs(ini, new_dlcs, refresh_names):
+    """new_dlcs: list of (appid:int, name:str) in API order.
+    Returns (added, updated, skipped)."""
+    added = updated = skipped = 0
+    sec = ini.get_section("dlc")
+    for appid, name in new_dlcs:
+        key = str(appid)
+        old = ini.get("dlc", key)
+        if old is None:
+            sec["index"][key] = len(sec["lines"])
+            sec["lines"].append(f"{key} = {name}")
+            added += 1
+        elif refresh_names and old != name:
+            idx = sec["index"][key]
+            sec["lines"][idx] = f"{key} = {name}"
+            updated += 1
+        else:
+            skipped += 1
+    return added, updated, skipped
+
+
+def dedupe_dlc_section(ini):
+    """Drop duplicate keys from the [dlc] section, keeping the first
+    occurrence. Upstream synced lists occasionally carry duplicates.
+    Returns the number of removed lines."""
+    sec = ini.get_section("dlc")
+    seen = set()
+    keep = []
+    for line in sec["lines"]:
+        key, _ = IniFile._split_key(line)
+        if key is not None and key in seen:
+            continue
+        if key is not None:
+            seen.add(key)
+        keep.append(line)
+    removed = len(sec["lines"]) - len(keep)
+    if removed:
+        sec["lines"] = keep
+        sec["index"] = {}
+        for i, line in enumerate(keep):
+            key, _ = IniFile._split_key(line)
+            if key is not None:
+                sec["index"][key] = i
+    return removed
+
+
+def dlc_diff(ini, new_dlcs, refresh_names):
+    """Describe what merge_dlcs() would change, as (marker, key, text) rows.
+    Must be called before merge_dlcs() mutates the ini."""
+    changes = []
+    for appid, name in new_dlcs:
+        key = str(appid)
+        old = ini.get("dlc", key)
+        if old is None:
+            changes.append(("+", key, name))
+        elif refresh_names and old != name:
+            changes.append(("~", key, f"{old} -> {name}"))
+    return changes
+
+
+def print_dry_run(changes, limit=DRY_RUN_PREVIEW_LIMIT):
+    """Preview the merge as a bounded diff. Dumping the whole file buried the
+    merge summary and flooded the GUI log tail."""
+    print(f"\n--- dry run: {len(changes)} change(s), file not written ---")
+    if not changes:
+        print("(nothing to add or refresh)")
+        return
+    for marker, key, text in changes[:limit]:
+        print(f"{marker} {key} = {text}")
+    if len(changes) > limit:
+        print(f"... and {len(changes) - limit} more")
+
+
+# ---------------------------------------------------------------- main -----
+
+def main():
+    ap = argparse.ArgumentParser(
+        description="Fetch DLCs for Steam apps and merge them into cream_api.ini")
+    ap.add_argument("appids", type=int, nargs="+",
+                    help="Steam app id(s) of the game(s)")
+    ap.add_argument("--output", default="cream_api.ini",
+                    help="path to cream_api.ini (default: ./cream_api.ini)")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="print the diff without writing the file")
+    ap.add_argument("--refresh-names", action="store_true",
+                    help="update names of already known DLC ids")
+    ap.add_argument("--verbose", action="store_true")
+    args = ap.parse_args()
+
+    # 1. fetch everything
+    all_dlcs = []  # (appid, name)
+    for appid in args.appids:
+        print(f"Fetching app {appid}...")
+        try:
+            name, dlc_ids = fetch_app(appid)
+        except Exception as exc:  # noqa: BLE001
+            print(f"error: failed to fetch app {appid}: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if not name:
+            print(f"error: app {appid} not found on Steam Store (region-locked?)",
+                  file=sys.stderr)
+            sys.exit(1)
+        print(f"  {name}: {len(dlc_ids)} DLC(s)")
+        if not dlc_ids:
+            continue
+        names = fetch_dlc_names(dlc_ids, verbose=args.verbose)
+        all_dlcs.extend((dlc_id, names[dlc_id]) for dlc_id in dlc_ids
+                        if dlc_id in names)
+
+    if not all_dlcs:
+        print("No DLC entries to merge.")
+        return
+
+    # 2. load existing ini
+    ini = load_ini(args.output)
+
+    # 3. merge
+    changes = dlc_diff(ini, all_dlcs, args.refresh_names)
+    added, updated, skipped = merge_dlcs(ini, all_dlcs, args.refresh_names)
+    removed = dedupe_dlc_section(ini)
+    print(f"Merge result: {added} added, {updated} updated, "
+          f"{skipped} unchanged, {removed} duplicate(s) removed")
+
+    # 4. dry-run or write
+    if args.dry_run:
+        print_dry_run(changes)
+        return
+    save_ini(args.output, ini)
+    print(f"Wrote {args.output}")
+
+
+if __name__ == "__main__":
+    main()
