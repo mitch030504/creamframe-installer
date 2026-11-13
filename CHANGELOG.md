@@ -1,3 +1,10 @@
+## [2.0.1] - 2026-11-13
+
+### Fixed
+- Startup no longer fails when the optional ScreamAPI or Koaloader cache cannot
+  be downloaded. The upstream ScreamAPI GitHub repository is currently blocked
+  for ToS reasons; Epic support reports a clear error only when used.
+
 ## [2.0.0] - 2026-11-13
 
 ### Added

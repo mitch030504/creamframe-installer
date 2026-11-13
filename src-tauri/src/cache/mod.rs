@@ -150,8 +150,9 @@ pub async fn initialize_cache() -> Result<(), String> {
                 update_screamapi_version(&version)?;
             }
             Err(e) => {
-                error!("Failed to download SmokeAPI: {}", e);
-                return Err(format!("Failed to download ScreamAPI: {}", e));
+                // ScreamAPI (Epic) is optional and its upstream GitHub repo
+                // can be unavailable. Do not block startup over it.
+                warn!("Failed to download ScreamAPI: {}", e);
             }
         }
     }
@@ -165,8 +166,8 @@ pub async fn initialize_cache() -> Result<(), String> {
                 update_koaloader_version(&version)?;
             }
             Err(e) => {
-                error!("Failed to download Koaloader: {}", e);
-                return Err(format!("Failed to download Koaloader: {}", e));
+                // Koaloader is only needed for some SmokeAPI modes.
+                warn!("Failed to download Koaloader: {}", e);
             }
         }
     }
