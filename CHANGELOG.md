@@ -4,6 +4,16 @@
 - CreamFrame branding, identity (`com.creamframe.installer`) and signed updates.
 - CreamFrame release integration with per-architecture assets
   (`creamframe.zip`, `creamframe-aarch64.zip`).
+- Steam Frame page with **Remote Frame** (SSH) and **This device** modes.
+- Android/Lepton APK patching from the installer, including DLC selection,
+  backup and revert.
+- Bundled `frame.py`, `apk_patch.py`, the Android proxy, `apksigner.jar` and a
+  Temurin JRE in the AppImage.
+- x86_64 and aarch64 AppImage/deb release builds with signed updater metadata.
+
+### Fixed
+- AppImage WebKit helper processes now resolve their bundled ICU and private
+  WebKit directory, so the window renders from any working directory.
 
 ### Changed
 - CreamLinux downloads now come from `mitch030504/creamframe`.
