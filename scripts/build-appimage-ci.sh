@@ -53,8 +53,13 @@ chmod +x "$WORK/squashfs-root/usr/bin/linuxdeploy-plugin-"*.sh
 # libjvm.so resolution that is not an AppImage dependency. Stage it outside the
 # AppDir during dependency deployment, then put it back before packaging.
 JDK_REL="usr/lib/CreamFrame/resources/jdk"
+ANDROID_REL="usr/lib/CreamFrame/resources/android"
 if [ -d "$WORK/appdir/$JDK_REL" ]; then
   mv "$WORK/appdir/$JDK_REL" "$WORK/jdk-staged"
+fi
+# The Android proxy is a bionic ELF; linuxdeploy's host ldd cannot inspect it.
+if [ -d "$WORK/appdir/$ANDROID_REL" ]; then
+  mv "$WORK/appdir/$ANDROID_REL" "$WORK/android-staged"
 fi
 
 export PATH="$WORK/squashfs-root/usr/bin:$PATH"
@@ -68,6 +73,9 @@ export DEPLOY_GTK_VERSION=3
 
 if [ -d "$WORK/jdk-staged" ]; then
   mv "$WORK/jdk-staged" "$WORK/appdir/$JDK_REL"
+fi
+if [ -d "$WORK/android-staged" ]; then
+  mv "$WORK/android-staged" "$WORK/appdir/$ANDROID_REL"
 fi
 
 # SteamOS owns the Wayland/XKB/XCB stack; bundling these breaks Gamescope.
