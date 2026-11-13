@@ -23,7 +23,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
+TOOLS_DIR = Path(os.environ.get("CREAMFRAME_TOOLS_DIR", REPO / "tools"))
 DEFAULT_REMOTE = os.environ.get("CREAM_FRAME_REMOTE", "steamos@frame")
+USE_LOCAL = False
 CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "creamframe"
 ANDROID_PROXY_CANDIDATES = [
     REPO / "build" / "android" / "lib" / "libsteam_api.so",
@@ -162,6 +164,9 @@ def run(cmd, input_text=None, capture=True, check=False):
 
 
 def ssh(remote, command, input_text=None, capture=True, check=False):
+    if USE_LOCAL:
+        return run(["bash", "-lc", command], input_text=input_text,
+                   capture=capture, check=check)
     return run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=8",
                 remote, command], input_text=input_text, capture=capture, check=check)
 
@@ -197,6 +202,9 @@ def remote_bool(remote, condition):
 
 def rsync_down(remote, remote_path, local_path):
     local_path.parent.mkdir(parents=True, exist_ok=True)
+    if USE_LOCAL:
+        shutil.copyfile(remote_path, local_path)
+        return
     result = run(["rsync", "-s", "--partial", "--info=progress2",
                   f"{remote}:{remote_path}", str(local_path)], capture=False)
     if result.returncode != 0:
@@ -204,6 +212,10 @@ def rsync_down(remote, remote_path, local_path):
 
 
 def rsync_up(remote, local_path, remote_path):
+    if USE_LOCAL:
+        Path(remote_path).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(local_path, remote_path)
+        return
     result = run(["rsync", "-s", "--partial", "--info=progress2",
                   str(local_path), f"{remote}:{remote_path}"], capture=False)
     if result.returncode != 0:
@@ -622,7 +634,7 @@ def cmd_native_install(args):
     lib_name = "lib32Creamlinux.so" if arch in ("i386", "arm") else "lib64Creamlinux.so"
     target = os.path.join(game["game_dir"], lib_name)
     rsync_up(args.remote, lib, target)
-    cream_sh = REPO / "package" / "cream.sh"
+    cream_sh = Path(os.environ.get("CREAMFRAME_CREAM_SH", REPO / "package" / "cream.sh"))
     if not cream_sh.is_file():
         cream_sh = REPO / "cream.sh"
     rsync_up(args.remote, cream_sh, os.path.join(game["game_dir"], "cream.sh"))
@@ -653,7 +665,10 @@ def upload_tools(remote):
     remote_dir = "/home/steamos/.local/share/creamframe/tools"
     ssh(remote, f"mkdir -p {quote(remote_dir)}")
     for name in ("setup.py", "creamlib.py", "update-dlc.py"):
-        rsync_up(remote, REPO / "tools" / name, os.path.join(remote_dir, name))
+        source = TOOLS_DIR / name
+        if not source.is_file():
+            source = REPO / "tools" / name
+        rsync_up(remote, source, os.path.join(remote_dir, name))
     return remote_dir
 
 
@@ -718,6 +733,8 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--remote", default=DEFAULT_REMOTE,
                     help=f"SSH destination (default: {DEFAULT_REMOTE})")
+    ap.add_argument("--local", action="store_true",
+                    help="operate on this machine instead of SSH (Frame-local mode)")
     sub = ap.add_subparsers(dest="command", required=True)
 
     sub.add_parser("doctor", help="check SSH, Steam, Lepton and host tools").set_defaults(func=cmd_doctor)
@@ -785,6 +802,8 @@ def main():
     logs.set_defaults(func=cmd_logs)
 
     args = ap.parse_args()
+    global USE_LOCAL
+    USE_LOCAL = args.local
     return args.func(args)
 
 
