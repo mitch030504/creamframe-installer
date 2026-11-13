@@ -36,12 +36,12 @@ the archived upstream CreamLinux releases.
 
 - Linux x86_64 or aarch64
 - WebKitGTK 4.1 (the AppImage bundles its runtime)
-- For Android patching: Python 3, `rsync`, Java, and Android build-tools
-  (`zipalign`, `apksigner`); or use the bundled portable runtime in the
-  AppImage
+- For Android patching: Python 3, `rsync`, `zip` and `unzip`. Both release
+  packages bundle the Temurin JRE, `apksigner.jar`, the Android proxy and a
+  portable `zipalign`-free patch path.
 
-The AppImage bundles the WebKit helpers, ICU and a Temurin JRE. The deb relies
-on the host's WebKitGTK and Java for Android patching.
+The AppImage bundles the WebKitGTK helpers and ICU. The deb uses the host's
+WebKitGTK.
 
 ### Steam Frame
 
