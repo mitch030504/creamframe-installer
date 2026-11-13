@@ -86,7 +86,7 @@ curl -fsSL -o "$WORK/appimagetool.AppImage" \
   "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${LD_ARCH}.AppImage"
 chmod +x "$WORK/appimagetool.AppImage"
 TARGET="$REPO_ROOT/$OUT_DIR/CreamFrame_${VERSION}_${ARCH}.AppImage"
-APPIMAGE_EXTRACT_AND_RUN=1 "$WORK/appimagetool.AppImage" "$WORK/appdir" "$TARGET"
+ARCH="$LD_ARCH" APPIMAGE_EXTRACT_AND_RUN=1 "$WORK/appimagetool.AppImage" "$WORK/appdir" "$TARGET"
 chmod +x "$TARGET"
 if [ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ]; then
   npx --prefix "$PWD" tauri signer sign "$TARGET"
