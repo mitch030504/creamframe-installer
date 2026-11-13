@@ -24,15 +24,15 @@ const OptInDialog: React.FC<OptInDialogProps> = ({ visible, onAccept, onDecline 
   return (
     <Dialog visible={visible} onClose={() => {}} size="medium">
       <DialogHeader onClose={() => {}} hideCloseButton={true}>
-        <h3>Help improve CreamLinux</h3>
+        <h3>Help improve CreamFrame</h3>
       </DialogHeader>
 
       <DialogBody>
         <div className="optin-content">
 
           <p className="optin-intro">
-            CreamLinux can collect anonymous compatibility reports to help users know which
-            games work with CreamLinux and SmokeAPI before they install them.
+            CreamFrame can collect anonymous compatibility reports to help users know which
+            games work with CreamFrame and SmokeAPI before they install them.
           </p>
 
           <div className="optin-details">
@@ -44,7 +44,7 @@ const OptInDialog: React.FC<OptInDialogProps> = ({ visible, onAccept, onDecline 
                 to identify you</em>, and even we cannot link it to your machine.
               </li>
               <li>The Steam App ID of the game you rated.</li>
-              <li>Which unlocker you used (CreamLinux or SmokeAPI).</li>
+              <li>Which unlocker you used (CreamFrame or SmokeAPI).</li>
               <li>Whether it worked or not.</li>
             </ul>
 

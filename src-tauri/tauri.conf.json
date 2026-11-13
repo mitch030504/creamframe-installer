@@ -17,10 +17,10 @@
     ],
     "createUpdaterArtifacts": true
   },
-  "productName": "Creamlinux",
-  "mainBinaryName": "creamlinux",
-  "version": "1.7.1",
-  "identifier": "com.creamlinux.dev",
+  "productName": "CreamFrame",
+  "mainBinaryName": "creamframe",
+  "version": "2.0.0",
+  "identifier": "com.creamframe.installer",
   "app": {
     "withGlobalTauri": false,
     "windows": [
@@ -40,9 +40,9 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERENzBFNjU0RTBBMUMyNzgKUldSNHdxSGdWT1p3M1liUE0vOGFCRkc2cEQwdWdRR2UyY2VmN3kzckNONCtsaGF0Y1d2WjdOWVEK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZBNzVCREVGNzkxQTAxQjQKUldTMEFScDU3NzExYW9idkdXamp0OTVaenQ2MEhyendSKzRrV2tQQ2REWWI0Wlcwazk4N3BlMmgK",
       "endpoints": [
-        "https://github.com/Novattz/creamlinux-installer/releases/latest/download/latest.json"
+        "https://github.com/mitch030504/creamframe-installer/releases/latest/download/latest.json"
       ]
     }
   }

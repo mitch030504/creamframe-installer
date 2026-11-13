@@ -843,7 +843,7 @@ fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
     use log4rs::encode::pattern::PatternEncoder;
     use std::fs;
 
-    let xdg_dirs = xdg::BaseDirectories::with_prefix("creamlinux")?;
+    let xdg_dirs = xdg::BaseDirectories::with_prefix("creamframe")?;
     let log_path = xdg_dirs.place_cache_file("creamlinux.log")?;
 
     if log_path.exists() {
@@ -864,7 +864,7 @@ fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
 
     log4rs::init_config(config)?;
 
-    info!("CreamLinux started with a clean log file");
+    info!("CreamFrame started with a clean log file");
     Ok(())
 }
 

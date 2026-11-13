@@ -14,7 +14,7 @@ const Header = ({ onSearch, searchQuery }: HeaderProps) => {
     <header className="app-header">
       <div className="app-title">
         <Icon name={diamond} variant="solid" size="lg" className="app-logo-icon" />
-        <h1>CreamLinux</h1>
+        <h1>CreamFrame</h1>
       </div>
 
       <div className="header-controls">

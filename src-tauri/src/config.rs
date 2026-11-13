@@ -27,12 +27,25 @@ impl Default for Config {
     }
 }
 
-// Get the config directory path (~/.config/creamlinux)
+// Get the config directory path (~/.config/creamframe)
 fn get_config_dir() -> Result<PathBuf, String> {
     let home = std::env::var("HOME")
         .map_err(|_| "Failed to get HOME directory".to_string())?;
     
-    let config_dir = PathBuf::from(home).join(".config").join("creamlinux");
+    let base = PathBuf::from(home).join(".config");
+    let config_dir = base.join("creamframe");
+    let legacy_dir = base.join("creamlinux");
+
+    // One-time migration from the inherited CreamLinux installer config.
+    if !config_dir.exists() && legacy_dir.exists() {
+        if let Err(e) = fs::create_dir_all(&config_dir) {
+            return Err(format!("Failed to create config directory: {}", e));
+        }
+        let legacy_config = legacy_dir.join("config.json");
+        if legacy_config.exists() {
+            let _ = fs::copy(legacy_config, config_dir.join("config.json"));
+        }
+    }
     Ok(config_dir)
 }
 
@@ -154,7 +167,7 @@ pub fn reset_config() -> Result<Config, String> {
     Ok(default_config)
 }
 
-// Open the config directory (~/.config/creamlinux) in the system's file
+// Open the config directory (~/.config/creamframe) in the system's file
 // manager
 pub fn open_config_folder() -> Result<(), String> {
     let config_dir = get_config_dir()?;

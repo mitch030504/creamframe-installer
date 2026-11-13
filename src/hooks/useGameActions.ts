@@ -114,7 +114,7 @@ export function useGameActions() {
         // For other actions (uninstall_cream, install_smoke, uninstall_smoke)
         const isCream = action.includes('cream')
         const isInstall = action.includes('install')
-        const product = isCream ? 'CreamLinux' : 'SmokeAPI'
+        const product = isCream ? 'CreamFrame' : 'SmokeAPI'
         const operation = isInstall ? 'Installing' : 'Uninstalling'
 
         // Show progress dialog
@@ -205,8 +205,8 @@ export function useGameActions() {
           // Show progress dialog for installation right away
           setProgressDialog({
             visible: true,
-            title: `Installing CreamLinux for ${game.title}`,
-            message: 'Preparing to download CreamLinux...',
+            title: `Installing CreamFrame for ${game.title}`,
+            message: 'Preparing to download CreamFrame...',
             progress: 0,
             showInstructions: false,
             instructions: undefined,

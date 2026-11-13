@@ -36,7 +36,7 @@ const InitialLoadingScreen = ({ message, progress }: InitialLoadingScreenProps) 
   return (
     <div className="initial-loading-screen">
       <div className="loading-content">
-        <h1>CreamLinux</h1>
+        <h1>CreamFrame</h1>
 
         <div className="loading-animation">
           <Spinner />

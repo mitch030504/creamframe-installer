@@ -35,7 +35,7 @@ const DisclaimerDialog = ({ visible, onClose }: DisclaimerDialogProps) => {
       <DialogBody>
         <div className="disclaimer-content">
           <p>
-            <strong>CreamLinux Installer</strong> does not install any DLC content files.
+            <strong>CreamFrame Installer</strong> does not install any DLC content files.
           </p>
           <p>
             This application manages the <strong>DLC IDs</strong> associated with DLCs you want to
@@ -43,7 +43,7 @@ const DisclaimerDialog = ({ visible, onClose }: DisclaimerDialogProps) => {
           </p>
           <p>
             This tool only configures which DLC IDs are recognized by the game unlockers
-            (CreamLinux and SmokeAPI).
+            (CreamFrame and SmokeAPI).
           </p>
         </div>
       </DialogBody>

@@ -1,3 +1,15 @@
+## [2.0.0] - 2026-11-13
+
+### Added
+- CreamFrame branding, identity (`com.creamframe.installer`) and signed updates.
+- CreamFrame release integration with per-architecture assets
+  (`creamframe.zip`, `creamframe-aarch64.zip`).
+
+### Changed
+- CreamLinux downloads now come from `mitch030504/creamframe`.
+- Cache validation accepts the per-architecture aarch64 archive.
+- Config/cache/log paths moved to CreamFrame with config migration.
+
 ## [1.7.1] - 12-07-2026
 
 ### Fixed

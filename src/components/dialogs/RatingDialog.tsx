@@ -27,7 +27,7 @@ export interface RatingDialogProps {
 }
 
 const UNLOCKER_LABELS: Record<string, string> = {
-  creamlinux: 'CreamLinux',
+  creamlinux: 'CreamFrame',
   smokeapi: 'SmokeAPI',
 }
 

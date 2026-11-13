@@ -86,7 +86,7 @@ const SmokeAPIVotesDialog: React.FC<SmokeAPIVotesDialogProps> = ({
             <div className="smokeapi-votes-notice">
               <Icon name={info} variant="solid" size="sm" />
               <span>
-                These ratings are from other CreamLinux users. Results may vary.
+                These ratings are from other CreamFrame users. Results may vary.
               </span>
             </div>
           )}

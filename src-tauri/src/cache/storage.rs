@@ -28,16 +28,16 @@ impl Default for CacheVersions {
     }
 }
 
-// Get the cache directory path (~/.cache/creamlinux)
+// Get the cache directory path (~/.cache/creamframe)
 pub fn get_cache_dir() -> Result<PathBuf, String> {
-    let xdg_dirs = xdg::BaseDirectories::with_prefix("creamlinux")
+    let xdg_dirs = xdg::BaseDirectories::with_prefix("creamframe")
         .map_err(|e| format!("Failed to get XDG directories: {}", e))?;
 
     let cache_dir = xdg_dirs
         .get_cache_home()
         .parent()
         .ok_or_else(|| "Failed to get cache parent directory".to_string())?
-        .join("creamlinux");
+        .join("creamframe");
 
     // Create the directory if it doesn't exist
     if !cache_dir.exists() {
@@ -102,7 +102,7 @@ pub fn clear_unlocker_cache() -> Result<(), String> {
 // Get the CreamLinux cache directory path
 pub fn get_creamlinux_dir() -> Result<PathBuf, String> {
     let cache_dir = get_cache_dir()?;
-    let creamlinux_dir = cache_dir.join("creamlinux");
+    let creamlinux_dir = cache_dir.join("creamframe");
 
     if !creamlinux_dir.exists() {
         fs::create_dir_all(&creamlinux_dir)
@@ -458,23 +458,19 @@ pub fn validate_creamlinux_cache(version: &str) -> Result<bool, String> {
         return Ok(false);
     }
 
-    // Required files for CreamLinux
-    let required_files = vec![
-        "cream.sh",
-        "cream_api.ini",
-        "lib32Creamlinux.so",
-        "lib64Creamlinux.so",
-    ];
-
+    // cream.sh and cream_api.ini are common. CreamFrame releases are
+    // per-architecture, so only the library for this host is required.
     let mut missing_files = Vec::new();
-
-    for file in &required_files {
-        let file_path = version_dir.join(file);
-        if !file_path.exists() {
+    for file in ["cream.sh", "cream_api.ini"] {
+        if !version_dir.join(file).exists() {
             missing_files.push(file.to_string());
         }
     }
-
+    let has_library = version_dir.join("lib64Creamlinux.so").exists()
+        || version_dir.join("lib32Creamlinux.so").exists();
+    if !has_library {
+        missing_files.push("lib64Creamlinux.so or lib32Creamlinux.so".to_string());
+    }
     if !missing_files.is_empty() {
         info!("Missing required files in cache: {:?}", missing_files);
         return Ok(false);

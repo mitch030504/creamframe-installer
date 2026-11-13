@@ -108,7 +108,7 @@ const OverviewPage = () => {
       )}
 
       <div className="stat-chips">
-        <StatChip label="CreamLinux Installed" value={creamCount} icon="Linux" />
+        <StatChip label="CreamFrame Installed" value={creamCount} icon="Linux" />
         <StatChip label="SmokeAPI Installed" value={smokeCount} icon="Windows" />
         <StatChip label="Compatibility Reports" value={localReports.length} icon="Star" />
       </div>

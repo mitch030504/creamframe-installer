@@ -115,7 +115,7 @@ const GameItem = ({ game, onAction, onEdit, onSmokeAPISettings, onRate, reportin
           <span className={`status-badge ${game.native ? 'native' : 'proton'}`}>
             {game.native ? 'Native' : 'Proton'}
           </span>
-          {game.cream_installed && <span className="status-badge cream">CreamLinux</span>}
+          {game.cream_installed && <span className="status-badge cream">CreamFrame</span>}
           {game.smoke_installed && <span className="status-badge smoke">SmokeAPI</span>}
         </div>
 

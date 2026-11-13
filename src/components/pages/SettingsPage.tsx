@@ -206,7 +206,7 @@ const SettingsPage = () => {
           <div className="danger-zone-row-text">
             <span className="danger-zone-row-label">Clear unlocker cache</span>
             <span className="danger-zone-row-description">
-              Deletes downloaded CreamLinux/SmokeAPI/ScreamAPI/Koaloader files.
+              Deletes downloaded CreamFrame/SmokeAPI/ScreamAPI/Koaloader files.
             </span>
           </div>
           <Button
@@ -222,7 +222,7 @@ const SettingsPage = () => {
         <div className="danger-zone-row">
           <div className="danger-zone-row-text">
             <span className="danger-zone-row-label">Open config folder</span>
-            <span className="danger-zone-row-description">~/.config/creamlinux</span>
+            <span className="danger-zone-row-description">~/.config/creamframe</span>
           </div>
           <Button variant="secondary" size="small" onClick={handleOpenConfigFolder}>
             Open

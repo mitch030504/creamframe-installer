@@ -236,12 +236,12 @@ function App() {
           options={[
             {
               key: 'cream',
-              title: 'CreamLinux',
+              title: 'CreamFrame',
               badge: 'recommended',
               description:
                 'Native Linux DLC unlocker. Works best with most native Linux games and provides better compatibility.',
               votes: creamVotes,
-              buttonLabel: 'Install CreamLinux',
+              buttonLabel: 'Install CreamFrame',
               buttonVariant: 'primary',
               onSelect: handleSelectCreamLinux,
             },
@@ -250,7 +250,7 @@ function App() {
               title: 'SmokeAPI',
               badge: 'alternative',
               description:
-                "Cross-platform DLC unlocker. Try this if CreamLinux doesn't work for your game. Automatically fetches DLC information.",
+                "Cross-platform DLC unlocker. Try this if CreamFrame doesn't work for your game. Automatically fetches DLC information.",
               votes: smokeVotes,
               buttonLabel: 'Install SmokeAPI',
               buttonVariant: 'secondary',

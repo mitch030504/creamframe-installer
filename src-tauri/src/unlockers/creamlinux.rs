@@ -18,8 +18,8 @@ impl Unlocker for CreamLinux {
 
         let client = reqwest::Client::new();
         
-        // Fetch the latest release from GitHub API
-        let api_url = "https://api.github.com/repos/anticitizn/creamlinux/releases/latest";
+        // Fetch the latest CreamFrame release from GitHub API.
+        let api_url = "https://api.github.com/repos/mitch030504/creamframe/releases/latest";
         
         let response = client
             .get(api_url)
@@ -57,10 +57,17 @@ impl Unlocker for CreamLinux {
 
         let client = reqwest::Client::new();
         
-        // Construct the download URL using the version
+        // CreamFrame publishes per-architecture archives. Keeping the
+        // installer's cache flat also avoids the old zip-slip/flattening
+        // behaviour and works with the aarch64 release on Steam Frame.
+        let asset = if cfg!(target_arch = "aarch64") {
+            "creamframe-aarch64.zip"
+        } else {
+            "creamframe.zip"
+        };
         let download_url = format!(
-            "https://github.com/anticitizn/creamlinux/releases/download/{}/creamlinux.zip",
-            version
+            "https://github.com/mitch030504/creamframe/releases/download/{}/{}",
+            version, asset
         );
 
         // Download the zip
@@ -106,11 +113,25 @@ impl Unlocker for CreamLinux {
                 continue;
             }
 
-            let output_path = version_dir.join(
-                Path::new(&file_name)
-                    .file_name()
-                    .unwrap_or_else(|| std::ffi::OsStr::new(&file_name)),
-            );
+            // The per-architecture release archives are flat. Reject paths
+            // that escape the cache directory rather than flattening them.
+            let rel = Path::new(&file_name);
+            let safe_name = rel
+                .components()
+                .filter(|component| matches!(component, std::path::Component::Normal(_)))
+                .map(|component| component.as_os_str())
+                .collect::<Vec<_>>();
+            if safe_name.is_empty() {
+                continue;
+            }
+            let mut output_path = version_dir.clone();
+            for component in safe_name {
+                output_path.push(component);
+            }
+            if let Some(parent) = output_path.parent() {
+                fs::create_dir_all(parent)
+                    .map_err(|e| format!("Failed to create output directory: {}", e))?;
+            }
 
             let mut outfile = fs::File::create(&output_path)
                 .map_err(|e| format!("Failed to create output file: {}", e))?;
@@ -180,8 +201,8 @@ impl Unlocker for CreamLinux {
             info!("Installed: {}", dest_path.display());
         }
 
-        // Note: cream_api.ini is managed separately by dlc_manager
-        // This function only installs the binaries
+        // Note: cream_api.ini is managed separately by dlc_manager.
+        // This function installs the binaries and the launch helper.
 
         info!("CreamLinux installation completed for: {}", game_path);
         Ok(())

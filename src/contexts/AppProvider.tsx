@@ -314,7 +314,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     try {
       await executeGameAction(gameId, action, games)
 
-      const product = action.includes('cream') ? 'CreamLinux' : 'SmokeAPI'
+      const product = action.includes('cream') ? 'CreamFrame' : 'SmokeAPI'
       const isUninstall = action.includes('uninstall')
       const isInstall = action.includes('install') && !isUninstall
 
@@ -429,12 +429,12 @@ export const AppProvider = ({ children }: AppProviderProps) => {
         success(
           isEditMode
             ? 'DLC configuration updated successfully'
-            : 'CreamLinux installed with selected DLCs'
+            : 'CreamFrame installed with selected DLCs'
         )
         pushActivity(
           isEditMode
             ? `Updated DLC configuration for ${gameTitle}`
-            : `Installed CreamLinux for ${gameTitle}`,
+            : `Installed CreamFrame for ${gameTitle}`,
           isEditMode ? 'update' : 'install'
         )
       })

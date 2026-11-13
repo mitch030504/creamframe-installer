@@ -84,7 +84,7 @@ const Sidebar = ({ setFilter, currentFilter }: SidebarProps) => {
           <span className="sidebar-footer-build">Stable</span>
         </div>
         <a
-          href="https://github.com/Novattz/creamlinux-installer"
+          href="https://github.com/mitch030504/creamframe-installer"
           target="_blank"
           rel="noopener noreferrer"
           className="sidebar-footer-link"
