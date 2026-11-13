@@ -69,13 +69,14 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Build Tauri bundles
-        run: |
-          set -euo pipefail
-          # linuxdeploy's bundled strip cannot process newer distro libraries.
-          # Prefer AppImage; fall back to deb if the AppImage toolchain fails.
-          NO_STRIP=true npm run tauri build -- --bundles "${{ matrix.bundles }}" || \
-            npm run tauri build -- --bundles deb
+      - name: Build Tauri deb
+        run: npm run tauri build -- --bundles deb
+
+      - name: Build AppImage with host strip
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: bash scripts/build-appimage-ci.sh
 
       - name: Collect and sign bundles
         env:
