@@ -1,3 +1,27 @@
+## [2.1.0] - 2026-11-14
+
+### Changed
+- Redesigned the Steam Frame page as a first-class app page: a masthead,
+  a target card with a proper Remote/This-device selector, state-aware game
+  rows, a real DLC dialog and a reserved activity strip.
+- Destructive Frame actions now use a shared confirmation dialog with exact
+  consequences; the DLC picker uses the app's dialog, search, checkbox and
+  button components.
+- The Frame page stays mounted when switching tabs, preserving scans,
+  activity and an in-flight patch.
+
+### Added
+- Native CreamFrame and Proton SmokeAPI install state in `frame.py scan`
+  (`cream_installed`, `smoke_installed`, `smoke_overwritten`).
+- Patched APK manifests now store the selected DLC IDs so re-patching restores
+  the previous selection when it is still available.
+
+### Fixed
+- Visible focus rings and 44px targets across the Frame page.
+- Dialog focus entry, Escape handling, focus trapping and focus return.
+- Clear empty, loading, error and stale-target states instead of blank space
+  and raw SSH errors.
+
 ## [2.0.3] - 2026-11-13
 
 ### Fixed

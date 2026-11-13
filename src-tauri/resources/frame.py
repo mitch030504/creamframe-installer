@@ -97,6 +97,9 @@ for library in libraries:
 
         native_lib = None
         proton_dll = None
+        smoke_active = False
+        smoke_backup = False
+        cream_installed = False
         if not apk_has_steam:
             root_depth = str(game_dir).rstrip(os.sep).count(os.sep)
             for dirpath, dirnames, filenames in os.walk(game_dir):
@@ -107,12 +110,35 @@ for library in libraries:
                     dirnames[:] = []
                     continue
                 for filename in filenames:
+                    full = os.path.join(dirpath, filename)
                     if filename == "libsteam_api.so" and native_lib is None:
-                        native_lib = os.path.join(dirpath, filename)
-                    if filename in ("steam_api.dll", "steam_api64.dll") and proton_dll is None:
-                        proton_dll = os.path.join(dirpath, filename)
+                        native_lib = full
+                    if filename in ("steam_api.dll", "steam_api64.dll"):
+                        if proton_dll is None:
+                            proton_dll = full
+                        try:
+                            # SmokeAPI's proxy DLL is much larger than the
+                            # original and contains its own name. This lets a
+                            # game update be reported as Overwritten instead of
+                            # Installed when a stale _o.dll remains.
+                            if b"smokeapi" in Path(full).read_bytes().lower():
+                                smoke_active = True
+                        except OSError:
+                            pass
+                    if filename in ("steam_api_o.dll", "steam_api64_o.dll"):
+                        smoke_backup = True
+                    if filename in ("smoke_api.dll", "smoke_api64.dll"):
+                        smoke_active = True
                 if native_lib is not None:
                     break
+
+            cream_installed = (
+                (game_dir / "cream.sh").is_file()
+                and any(
+                    (game_dir / name).is_file()
+                    for name in ("lib64Creamlinux.so", "lib32Creamlinux.so")
+                )
+            )
 
         game_type = None
         if apk_has_steam:
@@ -146,6 +172,9 @@ for library in libraries:
             "patch_info": patch_info,
             "native_lib": native_lib,
             "proton_dll": proton_dll,
+            "cream_installed": cream_installed,
+            "smoke_installed": smoke_active,
+            "smoke_overwritten": smoke_backup and not smoke_active,
         })
 
 print(json.dumps({"steam": str(STEAM), "libraries": [str(p) for p in libraries],
@@ -476,11 +505,13 @@ fi
     if result.returncode != 0:
         raise SystemExit(result.stderr.strip() or "remote APK replace failed")
 
+    dlc_ids = sorted(set(re.findall(r"^\s*(\d+)\s*=", ini_text, re.MULTILINE)))
     manifest = {
         "appid": game["appid"],
         "original_sha256": original_hash,
         "patched_sha256": patched_hash,
         "dlc_count": dlc_count,
+        "dlc_ids": dlc_ids,
         "proxy": str(android_proxy()),
         "created": subprocess.run(["date", "-u", "+%Y-%m-%dT%H:%M:%SZ"],
                                   text=True, capture_output=True).stdout.strip(),

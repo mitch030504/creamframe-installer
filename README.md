@@ -9,7 +9,7 @@ This project is a renamed fork of
 and installs [CreamFrame](https://github.com/mitch030504/creamframe) instead of
 the archived upstream CreamLinux releases.
 
-> **Status:** CreamFrame Installer 2.0.3 is released for x86_64 and aarch64
+> **Status:** CreamFrame Installer 2.1.0 is released for x86_64 and aarch64
 > (AppImage and deb). The Steam Frame remote and on-device Android patch flows
 > are validated against a real Frame with Walkabout Mini Golf. Beat Saber's
 > first launch still requires accepting the Steam EULA in the headset.
@@ -18,8 +18,9 @@ the archived upstream CreamLinux releases.
 
 - **Local Linux:** discovers Steam libraries and installs CreamFrame for native
   Linux games, SmokeAPI for Proton games and ScreamAPI for Heroic/Epic games.
-- **Steam Frame:** connects to `steamos@frame` over SSH, scans the Frame's
-  Steam libraries, and manages the same unlockers remotely.
+- **Steam Frame:** a dedicated target page for `steamos@frame` over SSH or
+  this device, with readable game states, guarded patch/revert/reset actions,
+  a DLC picker and a persistent activity log.
 - **On-device Android patching:** switch the Steam Frame page to **This device**
   to scan and patch Android/Lepton games installed on the machine running the
   installer.
@@ -64,8 +65,8 @@ Download the latest artifact from
 [the releases page](https://github.com/mitch030504/creamframe-installer/releases).
 
 ```sh
-chmod +x CreamFrame_2.0.3_*.AppImage
-./CreamFrame_2.0.3_*.AppImage
+chmod +x CreamFrame_2.1.0_*.AppImage
+./CreamFrame_2.1.0_*.AppImage
 ```
 
 ### Build from source

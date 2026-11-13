@@ -21,13 +21,22 @@
   opacity: 0;
   height: 0;
   width: 0;
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &:focus-visible + .checkbox-custom {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
 }
 
 .checkbox-custom {
   width: 22px;
   height: 22px;
   background-color: rgba(255, 255, 255, 0.05);
-  border: 2px solid var(--border-soft, #323232);
+  border: 2px solid color-mix(in srgb, var(--text-soft) 55%, var(--border-soft));
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -74,7 +83,7 @@
 
 .checkbox-sublabel {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text-soft);
 }
 
 // Animation for the checkbox

@@ -107,7 +107,7 @@ pub async fn frame_check(_app: AppHandle, remote: String, local: Option<bool>) -
     tauri::async_runtime::spawn_blocking(move || {
         let mut command = if local.unwrap_or(false) {
             let mut command = Command::new("bash");
-            command.args(["-lc", "uname -m; hostname"]);
+            command.args(["-lc", "uname -m; hostname; python3 --version"]);
             command
         } else {
             let mut command = Command::new("ssh");
@@ -117,7 +117,7 @@ pub async fn frame_check(_app: AppHandle, remote: String, local: Option<bool>) -
                 "-o",
                 "ConnectTimeout=8",
                 &remote,
-                "uname -m; hostname",
+                "uname -m; hostname; python3 --version",
             ]);
             command
         };

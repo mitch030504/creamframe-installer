@@ -7,7 +7,8 @@
   them feels consistent.
 */
 .overview-page,
-.settings-page {
+.settings-page,
+.frame-page {
   padding: 1.5rem;
   flex: 1;
   overflow-y: auto;
@@ -53,6 +54,13 @@
     margin-bottom: 1.25rem;
     line-height: 1.4;
   }
+}
+
+// The Frame page uses one deliberate wide measure so its masthead, target card
+// and game list share the same edge without becoming a full-width table.
+.page-section--wide {
+  max-width: 700px;
+  width: 100%;
 }
 
 // Danger Zone - a page-section with a subtle danger-tinted border instead
@@ -129,6 +137,29 @@
         color: var(--secondary-color);
         text-decoration: underline;
       }
+    }
+  }
+}
+
+// Frame page owns the vertical layout: a scrollable body plus a reserved
+// activity strip, so the log never overlays the last game row.
+.frame-page {
+  gap: 0;
+  overflow: hidden;
+  padding-bottom: 0;
+
+  .frame-page-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding-bottom: 1.25rem;
+    @include custom-scrollbar;
+
+    > * {
+      flex: 0 0 auto;
     }
   }
 }

@@ -158,9 +158,7 @@ function App() {
 
           {filter === 'overview' ? (
             <OverviewPage />
-          ) : filter === 'frame' ? (
-            <FramePage />
-          ) : filter === 'settings' ? (
+          ) : filter === 'frame' ? null : filter === 'settings' ? (
             <SettingsPage />
           ) : filter === 'epic' ? (
             <EpicGameList
@@ -191,6 +189,9 @@ function App() {
               reportingEnabled={reportingEnabled}
             />
           )}
+          <div className="frame-page-host" hidden={filter !== 'frame'}>
+            <FramePage />
+          </div>
         </div>
 
         {/* Progress Dialog */}
