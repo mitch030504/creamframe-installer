@@ -48,6 +48,10 @@ curl -fsSL -o "$WORK/squashfs-root/usr/bin/linuxdeploy-plugin-gtk.sh" \
 curl -fsSL -o "$WORK/squashfs-root/usr/bin/linuxdeploy-plugin-gstreamer.sh" \
   https://raw.githubusercontent.com/tauri-apps/linuxdeploy-plugin-gstreamer/master/linuxdeploy-plugin-gstreamer.sh
 chmod +x "$WORK/squashfs-root/usr/bin/linuxdeploy-plugin-"*.sh
+# Some distros keep nested app-local copies of GTK libraries under /usr/lib.
+# Only deploy the top-level ones, or linuxdeploy pulls in incompatible copies.
+sed -i 's|find "\$directory" \\(|find "\$directory" -maxdepth 1 \\(|' \
+  "$WORK/squashfs-root/usr/bin/linuxdeploy-plugin-gtk.sh"
 
 # linuxdeploy scans every ELF in the AppDir; the bundled JDK has internal
 # libjvm.so resolution that is not an AppImage dependency. Stage it outside the
@@ -78,22 +82,26 @@ if [ -d "$WORK/android-staged" ]; then
   mv "$WORK/android-staged" "$WORK/appdir/$ANDROID_REL"
 fi
 
-# WebKitGTK launches helper processes from a private directory. linuxdeploy
-# deploys libwebkit but not these helpers, so copy them and point WebKit at
-# the AppDir copy.
+# WebKitGTK launches helper processes from a private directory. The bundled
+# libwebkit2gtk resolves that directory relative to the current working
+# directory ("././lib/<triplet>/webkit2gtk-4.1"), so package the helpers there
+# and make AppRun cd into the AppDir before exec. The helpers also need the
+# bundled ICU via LD_LIBRARY_PATH. The exact relative directory depends on the
+# distro's WebKit build, so read it from the library itself.
 case "$LD_ARCH" in
   x86_64) TRIPLET=x86_64-linux-gnu ;;
   aarch64) TRIPLET=aarch64-linux-gnu ;;
 esac
-WEBKIT_DIR="/usr/lib/${TRIPLET}/webkit2gtk-4.1"
-if [ -d "$WEBKIT_DIR" ]; then
-  mkdir -p "$WORK/appdir/usr/lib/${TRIPLET}"
-  cp -a "$WEBKIT_DIR" "$WORK/appdir/usr/lib/${TRIPLET}/"
-  mkdir -p "$WORK/appdir/apprun-hooks"
-  cat > "$WORK/appdir/apprun-hooks/zz-creamframe-webkit.sh" <<HOOK
-export WEBKIT_EXEC_PATH="\$APPDIR/usr/lib/${TRIPLET}/webkit2gtk-4.1"
-export WEBKIT_INJECTED_BUNDLE_PATH="\$WEBKIT_EXEC_PATH/injected-bundle"
-HOOK
+WEBKIT_LIB="$(find "$WORK/appdir/usr/lib" -maxdepth 1 -name 'libwebkit2gtk-4.1.so.0' | head -n1)"
+WEBKIT_REL=""
+if [ -n "$WEBKIT_LIB" ]; then
+  WEBKIT_REL="$(strings "$WEBKIT_LIB" \
+    | grep -E '^\./\./+lib/.*webkit2gtk-4\.1$' | head -n1 \
+    | sed -e 's|^\./||' -e 's|^\./||' -e 's|^/||' -e 's|//*|/|g')"
+fi
+if [ -n "$WEBKIT_REL" ] && [ -d "/$WEBKIT_REL" ]; then
+  mkdir -p "$WORK/appdir/$(dirname "$WEBKIT_REL")"
+  cp -a "/$WEBKIT_REL" "$WORK/appdir/$(dirname "$WEBKIT_REL")/"
 fi
 
 # SteamOS owns the Wayland/XKB/XCB stack; bundling these breaks Gamescope.
@@ -103,10 +111,24 @@ for family in libwayland-client libwayland-cursor libwayland-egl libwayland-serv
 done
 
 # linuxdeploy may not have created AppRun when the appimage output plugin is
-# skipped. A symlink to the binary is sufficient for our single-binary app.
-if [ ! -e "$WORK/appdir/AppRun" ]; then
-  ln -s usr/bin/creamframe "$WORK/appdir/AppRun"
+# skipped. Keep its AppRun.wrapped target, but replace the generated AppRun
+# with one that sets the library path and working directory WebKit needs.
+if [ ! -e "$WORK/appdir/AppRun.wrapped" ]; then
+  ln -s usr/bin/creamframe "$WORK/appdir/AppRun.wrapped"
 fi
+cat > "$WORK/appdir/AppRun" <<APPRUN
+#!/usr/bin/env bash
+set -e
+this_dir="\$(readlink -f "\$(dirname "\$0")")"
+export APPDIR="\${APPDIR:-\$this_dir}"
+if [ -f "\$this_dir/apprun-hooks/linuxdeploy-plugin-gtk.sh" ]; then
+  source "\$this_dir/apprun-hooks/linuxdeploy-plugin-gtk.sh"
+fi
+cd "\$APPDIR"
+export LD_LIBRARY_PATH="\$APPDIR/usr/lib:\$APPDIR/usr/lib/${TRIPLET}:\${LD_LIBRARY_PATH:-}"
+exec "\$this_dir/AppRun.wrapped" "\$@"
+APPRUN
+chmod +x "$WORK/appdir/AppRun"
 
 curl -fsSL -o "$WORK/appimagetool.AppImage" \
   "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${LD_ARCH}.AppImage"
