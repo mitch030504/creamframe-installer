@@ -91,8 +91,8 @@ if [ -d "$WEBKIT_DIR" ]; then
   cp -a "$WEBKIT_DIR" "$WORK/appdir/usr/lib/${TRIPLET}/"
   mkdir -p "$WORK/appdir/apprun-hooks"
   cat > "$WORK/appdir/apprun-hooks/zz-creamframe-webkit.sh" <<HOOK
-export WEBKIT_EXEC_PATH="$APPDIR/usr/lib/${TRIPLET}/webkit2gtk-4.1"
-export WEBKIT_INJECTED_BUNDLE_PATH="$WEBKIT_EXEC_PATH/injected-bundle"
+export WEBKIT_EXEC_PATH="\$APPDIR/usr/lib/${TRIPLET}/webkit2gtk-4.1"
+export WEBKIT_INJECTED_BUNDLE_PATH="\$WEBKIT_EXEC_PATH/injected-bundle"
 HOOK
 fi
 
