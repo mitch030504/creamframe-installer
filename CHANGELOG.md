@@ -1,3 +1,10 @@
+## [2.0.2] - 2026-11-13
+
+### Fixed
+- AppImage builds now embed the AppImage bundle type. Previously the binary
+  declared the deb bundle type, so the signed updater tried to install the
+  downloaded update with `dpkg` instead of replacing the AppImage.
+
 ## [2.0.1] - 2026-11-13
 
 ### Fixed
