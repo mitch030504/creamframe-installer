@@ -549,7 +549,7 @@ export function FramePage() {
                   key={game.appid}
                   game={game}
                   pendingAction={pendingAction}
-                  stale={isStale}
+                  stale={isStale || scanning}
                   onPatch={openDlc}
                   onAction={runAction}
                   onConfirm={askConfirm}
