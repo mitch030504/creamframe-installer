@@ -28,6 +28,20 @@ mkdir -p "$WORK/appdir"
 (cd "$WORK" && ar x "$REPO_ROOT/$DEB")
 tar -xzf "$WORK/data.tar.gz" -C "$WORK/appdir"
 
+# The binary in the deb declares the deb bundle type, so Tauri's updater would
+# invoke dpkg instead of replacing the AppImage. Use the binary patched by
+# `tauri build --bundles appimage`, which declares the AppImage bundle type.
+APPIMAGE_BIN="$REPO_ROOT/src-tauri/target/release/creamframe"
+if [ -f "$APPIMAGE_BIN" ]; then
+  if ! strings "$APPIMAGE_BIN" | grep -q '__TAURI_BUNDLE_TYPE_VAR_APP'; then
+    echo "error: $APPIMAGE_BIN is not patched for the AppImage bundle type" >&2
+    echo "run: NO_STRIP=true npm run tauri build -- --bundles appimage" >&2
+    exit 1
+  fi
+  cp "$APPIMAGE_BIN" "$WORK/appdir/usr/bin/creamframe"
+  chmod +x "$WORK/appdir/usr/bin/creamframe"
+fi
+
 DESKTOP="$(find "$WORK/appdir/usr/share/applications" -name '*.desktop' | head -n1)"
 ICON="$(find "$WORK/appdir/usr/share/icons/hicolor" -name 'creamframe.png' | sort | tail -n1)"
 if [ -z "$DESKTOP" ] || [ -z "$ICON" ]; then

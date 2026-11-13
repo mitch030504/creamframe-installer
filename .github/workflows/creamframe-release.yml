@@ -72,6 +72,15 @@ jobs:
       - name: Build Tauri deb
         run: npm run tauri build -- --bundles deb
 
+      # Patch target/release/creamframe with the AppImage bundle type. The
+      # bundling step itself may fail on old linuxdeploy strip, but the patch
+      # happens first; the next step only needs the binary.
+      - name: Build AppImage-bundle-type binary
+        run: NO_STRIP=true npm run tauri build -- --bundles appimage || true
+
+      - name: Verify AppImage bundle type
+        run: grep -aq '__TAURI_BUNDLE_TYPE_VAR_APP' src-tauri/target/release/creamframe
+
       - name: Build AppImage with host strip
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
