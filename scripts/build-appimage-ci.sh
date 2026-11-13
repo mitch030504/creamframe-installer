@@ -78,6 +78,24 @@ if [ -d "$WORK/android-staged" ]; then
   mv "$WORK/android-staged" "$WORK/appdir/$ANDROID_REL"
 fi
 
+# WebKitGTK launches helper processes from a private directory. linuxdeploy
+# deploys libwebkit but not these helpers, so copy them and point WebKit at
+# the AppDir copy.
+case "$LD_ARCH" in
+  x86_64) TRIPLET=x86_64-linux-gnu ;;
+  aarch64) TRIPLET=aarch64-linux-gnu ;;
+esac
+WEBKIT_DIR="/usr/lib/${TRIPLET}/webkit2gtk-4.1"
+if [ -d "$WEBKIT_DIR" ]; then
+  mkdir -p "$WORK/appdir/usr/lib/${TRIPLET}"
+  cp -a "$WEBKIT_DIR" "$WORK/appdir/usr/lib/${TRIPLET}/"
+  mkdir -p "$WORK/appdir/apprun-hooks"
+  cat > "$WORK/appdir/apprun-hooks/zz-creamframe-webkit.sh" <<HOOK
+export WEBKIT_EXEC_PATH="\$APPDIR/usr/lib/${TRIPLET}/webkit2gtk-4.1"
+export WEBKIT_INJECTED_BUNDLE_PATH="\$WEBKIT_EXEC_PATH/injected-bundle"
+HOOK
+fi
+
 # SteamOS owns the Wayland/XKB/XCB stack; bundling these breaks Gamescope.
 for family in libwayland-client libwayland-cursor libwayland-egl libwayland-server \
               libxkbcommon libxcb-randr libxcb-render libxcb-shm libXau libXdmcp; do
