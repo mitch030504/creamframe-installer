@@ -49,6 +49,14 @@ curl -fsSL -o "$WORK/squashfs-root/usr/bin/linuxdeploy-plugin-gstreamer.sh" \
   https://raw.githubusercontent.com/tauri-apps/linuxdeploy-plugin-gstreamer/master/linuxdeploy-plugin-gstreamer.sh
 chmod +x "$WORK/squashfs-root/usr/bin/linuxdeploy-plugin-"*.sh
 
+# linuxdeploy scans every ELF in the AppDir; the bundled JDK has internal
+# libjvm.so resolution that is not an AppImage dependency. Stage it outside the
+# AppDir during dependency deployment, then put it back before packaging.
+JDK_REL="usr/lib/CreamFrame/resources/jdk"
+if [ -d "$WORK/appdir/$JDK_REL" ]; then
+  mv "$WORK/appdir/$JDK_REL" "$WORK/jdk-staged"
+fi
+
 export PATH="$WORK/squashfs-root/usr/bin:$PATH"
 export DEPLOY_GTK_VERSION=3
 "$WORK/squashfs-root/usr/bin/linuxdeploy" \
@@ -57,6 +65,10 @@ export DEPLOY_GTK_VERSION=3
   --desktop-file "$DESKTOP" \
   --icon-file "$ICON" \
   --plugin gtk
+
+if [ -d "$WORK/jdk-staged" ]; then
+  mv "$WORK/jdk-staged" "$WORK/appdir/$JDK_REL"
+fi
 
 # SteamOS owns the Wayland/XKB/XCB stack; bundling these breaks Gamescope.
 for family in libwayland-client libwayland-cursor libwayland-egl libwayland-server \
