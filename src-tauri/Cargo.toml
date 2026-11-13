@@ -1,6 +1,6 @@
 [package]
 name = "creamframe-installer"
-version = "2.0.2"
+version = "2.0.3"
 description = "DLC Manager for Steam games on Linux"
 authors = ["tickbase"]
 license = "MIT"

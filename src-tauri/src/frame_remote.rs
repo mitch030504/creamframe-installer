@@ -16,11 +16,17 @@ fn resource_candidates(app: &AppHandle, name: &str) -> Vec<PathBuf> {
         candidates.push(resource_dir.join(name));
         candidates.push(resource_dir.join("resources").join(name));
     }
-    if let Ok(cwd) = std::env::current_dir() {
-        candidates.push(cwd.join("resources").join(name));
-        candidates.push(cwd.join("src-tauri").join("resources").join(name));
+    // Development-only fallbacks. Release builds must only trust the bundle,
+    // otherwise a `resources/` directory next to the AppImage could be used
+    // to execute arbitrary helper code.
+    #[cfg(debug_assertions)]
+    {
+        if let Ok(cwd) = std::env::current_dir() {
+            candidates.push(cwd.join("resources").join(name));
+            candidates.push(cwd.join("src-tauri").join("resources").join(name));
+        }
+        candidates.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources").join(name));
     }
-    candidates.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources").join(name));
     candidates
 }
 
@@ -88,26 +94,37 @@ pub fn frame_prereqs(app: AppHandle) -> Result<FramePrereqs, String> {
     })
 }
 
+/// Child tools must use the host's libraries. The AppImage sets
+/// LD_LIBRARY_PATH/APPDIR for its own WebKit helpers, and leaking that into
+/// system Python/ssh/rsync causes OpenSSL and glibc mismatches.
+fn sanitize_child_env(command: &mut Command) {
+    command.env_remove("LD_LIBRARY_PATH");
+    command.env_remove("LD_PRELOAD");
+}
+
 #[tauri::command]
 pub async fn frame_check(_app: AppHandle, remote: String, local: Option<bool>) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let output = if local.unwrap_or(false) {
-            Command::new("bash")
-                .args(["-lc", "uname -m; hostname"])
-                .output()
+        let mut command = if local.unwrap_or(false) {
+            let mut command = Command::new("bash");
+            command.args(["-lc", "uname -m; hostname"]);
+            command
         } else {
-            Command::new("ssh")
-                .args([
-                    "-o",
-                    "BatchMode=yes",
-                    "-o",
-                    "ConnectTimeout=8",
-                    &remote,
-                    "uname -m; hostname",
-                ])
-                .output()
-        }
-        .map_err(|e| format!("failed to run connection check: {}", e))?;
+            let mut command = Command::new("ssh");
+            command.args([
+                "-o",
+                "BatchMode=yes",
+                "-o",
+                "ConnectTimeout=8",
+                &remote,
+                "uname -m; hostname",
+            ]);
+            command
+        };
+        sanitize_child_env(&mut command);
+        let output = command
+            .output()
+            .map_err(|e| format!("failed to run connection check: {}", e))?;
         if !output.status.success() {
             return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
         }
@@ -128,6 +145,7 @@ pub async fn frame_scan(app: AppHandle, remote: String, local: Option<bool>) -> 
         } else {
             command.args(["--remote", &remote, "scan", "--json"]);
         }
+        sanitize_child_env(&mut command);
         let output = command
             .output()
             .map_err(|e| format!("failed to run frame.py: {}", e))?;
@@ -146,6 +164,7 @@ fn emit_line(app: &AppHandle, line: &str) {
 }
 
 fn apply_frame_env(app: &AppHandle, command: &mut Command) {
+    sanitize_child_env(command);
     if let Ok(tools) = find_resource(app, "setup.py") {
         if let Some(dir) = tools.parent() {
             command.env("CREAMFRAME_TOOLS_DIR", dir);
@@ -280,7 +299,8 @@ pub async fn frame_android_patch_local(
         let keytool = find_resource(&app, "jdk/bin/keytool")?;
         let out = format!("{}.cream-new", apk_path);
 
-        let output = Command::new(python_bin())
+        let mut command = Command::new(python_bin());
+        command
             .arg(&script)
             .args([
                 &apk_path,
@@ -293,7 +313,9 @@ pub async fn frame_android_patch_local(
                 "--keytool", keytool.to_string_lossy().as_ref(),
             ])
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
+            .stderr(Stdio::piped());
+        sanitize_child_env(&mut command);
+        let output = command
             .output()
             .map_err(|e| format!("failed to run apk_patch.py: {}", e))?;
 
@@ -328,4 +350,20 @@ pub fn _resource_path(app: &AppHandle, name: &str) -> Result<PathBuf, String> {
 
 pub fn _path_exists(path: &Path) -> bool {
     path.exists()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn child_env_drops_appimage_library_paths() {
+        let mut command = Command::new("sh");
+        command.args(["-c", "printf %s \"${LD_LIBRARY_PATH:-unset}\""]);
+        command.env("LD_LIBRARY_PATH", "/tmp/appimage/usr/lib");
+        command.env("LD_PRELOAD", "/tmp/appimage/usr/lib/libpreload.so");
+        sanitize_child_env(&mut command);
+        let output = command.output().expect("run sh");
+        assert_eq!(String::from_utf8_lossy(&output.stdout), "unset");
+    }
 }

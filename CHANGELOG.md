@@ -1,3 +1,10 @@
+## [2.0.3] - 2026-11-13
+
+### Fixed
+- The AppImage no longer leaks its bundled `LD_LIBRARY_PATH`/`LD_PRELOAD` into
+  child tools (`python3`, `ssh`, `rsync`, `lspci`, `xdg-open`). On-device Frame
+  actions previously failed with OpenSSL/glibc symbol mismatches.
+
 ## [2.0.2] - 2026-11-13
 
 ### Fixed

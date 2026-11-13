@@ -18,7 +18,11 @@ esac
 REPO_ROOT="$PWD"
 VERSION="$(node -p "require('./package.json').version")"
 DEB_DIR=src-tauri/target/release/bundle/deb
-DEB="$(ls "$DEB_DIR"/*.deb | head -n1)"
+if ls "$DEB_DIR"/CreamFrame_"${VERSION}"_*.deb >/dev/null 2>&1; then
+  DEB="$(ls -t "$DEB_DIR"/CreamFrame_"${VERSION}"_*.deb | head -n1)"
+else
+  DEB="$(ls -t "$DEB_DIR"/*.deb | head -n1)"
+fi
 OUT_DIR=src-tauri/target/release/bundle/appimage
 mkdir -p "$OUT_DIR"
 
@@ -33,7 +37,7 @@ tar -xzf "$WORK/data.tar.gz" -C "$WORK/appdir"
 # `tauri build --bundles appimage`, which declares the AppImage bundle type.
 APPIMAGE_BIN="$REPO_ROOT/src-tauri/target/release/creamframe"
 if [ -f "$APPIMAGE_BIN" ]; then
-  if ! strings "$APPIMAGE_BIN" | grep -q '__TAURI_BUNDLE_TYPE_VAR_APP'; then
+  if ! grep -aq '__TAURI_BUNDLE_TYPE_VAR_APP' "$APPIMAGE_BIN"; then
     echo "error: $APPIMAGE_BIN is not patched for the AppImage bundle type" >&2
     echo "run: NO_STRIP=true npm run tauri build -- --bundles appimage" >&2
     exit 1

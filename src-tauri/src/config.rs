@@ -183,6 +183,8 @@ pub fn open_config_folder() -> Result<(), String> {
 
     std::process::Command::new("xdg-open")
         .arg(&config_dir)
+        .env_remove("LD_LIBRARY_PATH")
+        .env_remove("LD_PRELOAD")
         .spawn()
         .map_err(|e| format!("Failed to open config folder: {}", e))?;
 

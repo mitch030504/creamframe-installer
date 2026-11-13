@@ -73,7 +73,12 @@ fn simplify_gpu_name(raw: &str) -> String {
 // system has `lspci` (minimal containers, some distros), so this degrades
 // to "Unknown GPU" instead of failing the whole system-info fetch.
 fn read_gpu_name() -> String {
-    let output = match Command::new("lspci").output() {
+    let mut command = Command::new("lspci");
+    // The AppImage sets LD_LIBRARY_PATH for WebKit; system tools must not
+    // inherit it.
+    command.env_remove("LD_LIBRARY_PATH");
+    command.env_remove("LD_PRELOAD");
+    let output = match command.output() {
         Ok(output) if output.status.success() => output,
         _ => return "Unknown GPU".to_string(),
     };
