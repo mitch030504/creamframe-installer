@@ -9,7 +9,7 @@ This project is a renamed fork of
 and installs [CreamFrame](https://github.com/mitch030504/creamframe) instead of
 the archived upstream CreamLinux releases.
 
-> **Status:** CreamFrame Installer 2.0.2 is released for x86_64 and aarch64
+> **Status:** CreamFrame Installer 2.0.3 is released for x86_64 and aarch64
 > (AppImage and deb). The Steam Frame remote and on-device Android patch flows
 > are validated against a real Frame with Walkabout Mini Golf. Beat Saber's
 > first launch still requires accepting the Steam EULA in the headset.
@@ -64,8 +64,8 @@ Download the latest artifact from
 [the releases page](https://github.com/mitch030504/creamframe-installer/releases).
 
 ```sh
-chmod +x CreamFrame_2.0.2_*.AppImage
-./CreamFrame_2.0.2_*.AppImage
+chmod +x CreamFrame_2.0.3_*.AppImage
+./CreamFrame_2.0.3_*.AppImage
 ```
 
 ### Build from source
